@@ -6,7 +6,7 @@
     "default": "钟意"
   },
   "avatar": {
-    "default": "https://blog.thatcoder.cn/custom/img/flomo.svg"
+    "default": "https://log.cns.red/custom/img/flomo.svg"
   },
   "msg": {
     "path":"content",
@@ -24,6 +24,6 @@
     "default": "-- From Memos "
   },
   "icon": {
-    "default": "https://blog.thatcoder.cn/custom/img/flomo.svg"
+    "default": "https://log.cns.red/custom/img/flomo.svg"
   }
 }

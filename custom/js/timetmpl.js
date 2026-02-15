@@ -730,7 +730,7 @@ const TmplConfig = {
               "default": "钟意"
         },
         "avatar": {
-              "default": "https://blog.thatcoder.cn/custom/img/flomo.svg"
+              "default": "https://log.cns.red/custom/img/flomo.svg"
         },
         "msg": {
               "path":  "content",
@@ -748,7 +748,7 @@ const TmplConfig = {
               "default": "-- From Memos "
         },
         "icon": {
-              "default": "https://blog.thatcoder.cn/custom/img/flomo.svg"
+              "default": "https://log.cns.red/custom/img/flomo.svg"
         }
     },
     memos: {
@@ -759,7 +759,7 @@ const TmplConfig = {
             "default": "钟意"
         },
         "avatar": {
-            "default": "https://blog.thatcoder.cn/custom/img/flomo.svg"
+            "default": "https://log.cns.red/custom/img/flomo.svg"
         },
         "msg": {
             "path": "content",
@@ -777,7 +777,7 @@ const TmplConfig = {
             "default": "Memos "
         },
         "icon": {
-            "default": "https://blog.thatcoder.cn/custom/img/flomo.svg"
+            "default": "https://log.cns.red/custom/img/flomo.svg"
         }
     },
     netease: {
@@ -828,7 +828,7 @@ const TmplConfig = {
             "default": "网易云音乐"
         },
         "icon": {
-            "default": "https://blog.thatcoder.cn/custom/img/网易云音乐.svg"
+            "default": "https://log.cns.red/custom/img/网易云音乐.svg"
         }
     },
 }

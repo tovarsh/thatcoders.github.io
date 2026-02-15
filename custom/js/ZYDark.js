@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2024.
  * ZYDark.js files written in 2024/5/11 上午8:56 are ThatCoder (钟意) for MyBlog projects.
- * ThatCoder's blog is https://blog.thatcoder.cn
+ * ThatCoder's blog is https://log.cns.red
  * If you are interested in this code or have any questions, you are welcome to visit and discuss it.
  */
 

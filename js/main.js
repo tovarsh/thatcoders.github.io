@@ -52,12 +52,26 @@ const util = {
   },
 
   scrollTop: () => {
-    window.scrollTo({top: 0, behavior: "smooth"});
+    window.scrollTo({ top: 0, behavior: "smooth" });
   },
 
   scrollComment: () => {
-    document.getElementById('comments').scrollIntoView({behavior: "smooth"});
+    document.getElementById('comments').scrollIntoView({ behavior: "smooth" });
   },
+
+  viewportLazyload: (target, func, enabled = true) => {
+    if (!enabled || !("IntersectionObserver" in window)) {
+      func();
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].intersectionRatio > 0) {
+        func();
+        observer.disconnect();
+      }
+    });
+    observer.observe(target);
+  }
 }
 
 const hud = {
@@ -69,8 +83,8 @@ const hud = {
     el.innerHTML = msg;
     document.body.appendChild(el);
 
-    setTimeout(function(){ document.body.removeChild(el) }, d);
-    
+    setTimeout(function () { document.body.removeChild(el) }, d);
+
   },
 
 }
@@ -124,20 +138,20 @@ const init = {
         const offsetBottom = e1.getBoundingClientRect().bottom - e0.getBoundingClientRect().bottom + 100;
         const offsetTop = e1.getBoundingClientRect().top - e0.getBoundingClientRect().top - 64;
         if (offsetTop < 0) {
-          e0.scrollBy({top: offsetTop, behavior: "smooth"});
+          e0.scrollBy({ top: offsetTop, behavior: "smooth" });
         } else if (offsetBottom > 0) {
-          e0.scrollBy({top: offsetBottom, behavior: "smooth"});
+          e0.scrollBy({ top: offsetBottom, behavior: "smooth" });
         }
       }
-      
+
       var timeout = null;
-      window.addEventListener('scroll', function() {
+      window.addEventListener('scroll', function () {
         activeTOC();
-        if(timeout !== null) clearTimeout(timeout);
-        timeout = setTimeout(function() {
+        if (timeout !== null) clearTimeout(timeout);
+        timeout = setTimeout(function () {
           scrollTOC();
         }.bind(this), 50);
-      });      
+      });
     })
   },
   sidebar: () => {
@@ -186,11 +200,121 @@ const init = {
     window.dispatchEvent(new Event('tabs:register'));
   },
 
+  canonicalCheck: () => {
+    const canonical = window.canonical;
+    function originStatusCheck() {
+      return new Promise((resolve) => {
+        if (window.canonical.originalHost === window.location.hostname) {
+          resolve(true);
+          return;
+        }
+        const scriptUrl = `https://${window.canonical.originalHost}${window.canonical.param.checklink}`;
+        const script = document.createElement('script');
+        script.src = scriptUrl;
+        script.type = 'text/javascript';
+        script.onload = function () { resolve(true); };
+        script.onerror = function () { resolve(false); };
+        document.head.appendChild(script);
+      });
+    }
+    async function showTip(isOfficial = false) {
+      const meta = document.createElement('meta');
+      meta.name = 'robots';
+      meta.content = 'noindex, nofollow';
+      document.head.appendChild(meta);
+      const notice = document.createElement('div');
+      const originalURL = `https://${canonical.originalHost}`;
+      const currentURL = canonical.param.permalink.startsWith("http") ? canonical.param.permalink : originalURL;
+      if (isOfficial) {
+        const closeEnable = window.localStorage.getItem('Stellar.canonical.closeEnable') === 'true'
+        const closedToday = window.localStorage.getItem('Stellar.canonical.closeTime') === new Date().toDateString()
+        if ((closeEnable && closedToday) || !(await originStatusCheck())) return;
+        notice.className = 'canonical-tip official';
+        notice.innerHTML = `
+          <a href="${currentURL}" target="_self" rel="noopener noreferrer">
+          本站为官方备用站，仅供应急。点击移步主站<br>${originalURL}
+          </a>
+          ${canonical.closeEnable ? '<button id="canonical-close">' + canonical.closeText || '关闭提示' + '</button>' : ''}
+        `;
+      } else {
+        notice.className = 'canonical-tip unofficial';
+        notice.innerHTML = `
+        <a href="${currentURL}" target="_self" rel="noopener noreferrer">
+        <div class="headline icon">☠️</div>
+        本站为非法克隆站，请前往官方源站访问。<br>
+        源站：${originalURL}
+        </a>
+        `;
+      }
+      document.body.appendChild(notice);
+      const closeBtn = notice.querySelector('#canonical-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+          window.localStorage.setItem('Stellar.canonical.closeEnable', "true")
+          window.localStorage.setItem('Stellar.canonical.closeTime', new Date().toDateString())
+          notice.style.display = 'none';
+        });
+      }
+    }
+    if (!canonical.originalHost) return;
+    const currentURL = new URL(window.location.href);
+    const currentHost = currentURL.hostname.replace(/^www\./, '');
+    if (currentHost == 'localhost') return;
+    const encodedCurrentHost = window.btoa(currentHost);
+    const isCurrentHostValid = canonical.encoded === encodedCurrentHost;
+    const canonicalTag = document.querySelector('link[rel="canonical"]');
+    if (!canonicalTag) {
+      if (isCurrentHostValid) {
+        return;
+      }
+      if (canonical.officialHosts?.includes(currentHost)) {
+        showTip(true);
+        return;
+      }
+      showTip(false);
+      return;
+    }
+    const canonicalURL = new URL(canonicalTag.href);
+    const canonicalHost = canonicalURL.hostname.replace(/^www\./, '');
+    const encodedCanonicalHost = window.btoa(canonicalHost);
+    const isCanonicalHostValid = canonical.encoded === encodedCanonicalHost;
+    if (isCanonicalHostValid && isCurrentHostValid) {
+      return;
+    }
+    showTip(canonical.officialHosts?.includes(currentHost));
+  }
+
 }
 
 
-// init
-init.toc()
-init.sidebar()
-init.relativeDate(document.querySelectorAll('#post-meta time'))
-init.registerTabsTag()
+// Stellar namespace
+window.stellar = window.stellar || {};
+
+/**
+ * Initialize page components
+ * Called on initial load and after PJAX navigation
+ */
+stellar.initPage = function () {
+  init.toc();
+  init.sidebar();
+  init.relativeDate(document.querySelectorAll('#post-meta time'));
+  init.registerTabsTag();
+  
+  // Reinitialize comments after PJAX navigation
+  if (stellar.initComments) {
+    for (const commentSystem in stellar.initComments) {
+      if (typeof stellar.initComments[commentSystem] === 'function') {
+        stellar.initComments[commentSystem]();
+      }
+    }
+  }
+};
+
+// Initial page load
+stellar.initPage();
+init.canonicalCheck();
+
+// Listen for PJAX navigation complete
+document.addEventListener('pjax:complete', function () {
+  stellar.initPage();
+});
